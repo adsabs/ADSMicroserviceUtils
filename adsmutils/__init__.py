@@ -17,6 +17,7 @@ import logging
 import imp
 import sys
 import time
+import socket
 import json
 import ast
 from dateutil import parser, tz
@@ -24,10 +25,14 @@ from datetime import datetime
 import inspect
 from cloghandler import ConcurrentRotatingFileHandler
 from flask import Flask
+from pythonjsonlogger import jsonlogger
+from celery.utils.log import PY3, string_t, text_t, colored, safe_str
+from logging import Formatter
 
 local_zone = tz.tzlocal()
 utc_zone = tz.tzutc()
 
+TIMESTAMP_FMT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 def _get_proj_home(extra_frames=0):
     """Get the location of the caller module; then go up max_levels until
@@ -339,3 +344,95 @@ class MultilineMessagesFormatter(logging.Formatter):
             return logging.Formatter.formatTime(self, record, datefmt)
         else:
             return logging.Formatter.formatTime(self, record, datefmt) # default ISO8601
+
+
+
+class JsonFormatter(jsonlogger.JsonFormatter, object):
+    converter = time.gmtime
+    #: Loglevel -> Color mapping.
+    COLORS = colored().names
+    colors = {
+        'DEBUG': COLORS['blue'],
+        'WARNING': COLORS['yellow'],
+        'ERROR': COLORS['red'],
+        'CRITICAL': COLORS['magenta'],
+    }
+
+    def __init__(self,
+                 fmt="%(asctime) %(name) %(processName) %(filename)  %(funcName) %(levelname) %(lineno) %(module) %(threadName) %(message)",
+                 datefmt=TIMESTAMP_FMT,
+                 use_color=False,
+                 extra={}, *args, **kwargs):
+        self._extra = extra
+        self.use_color = use_color
+        jsonlogger.JsonFormatter.__init__(self, fmt=fmt, datefmt=datefmt, *args, **kwargs)
+
+    def process_log_record(self, log_record):
+        # Enforce the presence of a timestamp
+        if "asctime" in log_record:
+            log_record["timestamp"] = log_record["asctime"]
+        else:
+            log_record["timestamp"] = datetime.datetime.utcnow().strftime(TIMESTAMP_FMT)
+
+        if self._extra is not None:
+            for key, value in self._extra.items():
+                log_record[key] = value
+        return super(JsonFormatter, self).process_log_record(log_record)
+
+    def formatException(self, ei):
+        if ei and not isinstance(ei, tuple):
+            ei = sys.exc_info()
+        r = jsonlogger.JsonFormatter.formatException(self, ei)
+        if isinstance(r, str) and not PY3:
+            return safe_str(r)
+        return r
+
+    def formatTime(self, record, datefmt=None):
+        """logging uses time.strftime which doesn't understand
+        how to add microsecs. datetime understands that. so we
+        have to work around the old time.strftime here."""
+        if datefmt:
+            datefmt = datefmt.replace('%f', '%03d' % (record.msecs))
+            return Formatter.formatTime(self, record, datefmt)
+        else:
+            return Formatter.formatTime(self, record, datefmt)  # default ISO8601
+
+    def format(self, record):
+        msg = jsonlogger.JsonFormatter.format(self, record)
+        color = self.colors.get(record.levelname)
+
+        # reset exception info later for other handlers...
+        einfo = sys.exc_info() if record.exc_info == 1 else record.exc_info
+
+        if color and self.use_color:
+            try:
+                # safe_str will repr the color object
+                # and color will break on non-string objects
+                # so need to reorder calls based on type.
+                # Issue #427
+                try:
+                    if isinstance(msg, string_t):
+                        return text_t(color(safe_str(msg)))
+                    return safe_str(color(msg))
+                except UnicodeDecodeError:  # pragma: no cover
+                    return safe_str(msg)  # skip colors
+            except Exception as exc:  # pylint: disable=broad-except
+                prev_msg, record.exc_info, record.msg = (
+                    record.msg, 1, '<Unrepresentable {0!r}: {1!r}>'.format(
+                        type(msg), exc
+                    ),
+                )
+                try:
+                    return logging.Formatter.format(self, record)
+                finally:
+                    record.msg, record.exc_info = prev_msg, einfo
+        else:
+            return safe_str(msg)
+
+
+def get_json_formatter(use_color=False,
+                       logfmt=u'%(asctime)s,%(msecs)03d %(levelname)-8s [%(process)d:%(threadName)s:%(filename)s:%(lineno)d] %(message)s',
+                       datefmt=TIMESTAMP_FMT):
+    return JsonFormatter(logfmt, datefmt, extra={"hostname": socket.gethostname()}, use_color=use_color)
+
+

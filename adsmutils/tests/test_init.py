@@ -8,7 +8,7 @@ import pdb
 def _read_file(fpath):
     with open(fpath, 'r') as fi:
         return fi.read()
-    
+
 class TestInit(unittest.TestCase):
 
     def test_logging(self):
@@ -23,7 +23,7 @@ class TestInit(unittest.TestCase):
         self.assertTrue(os.path.exists(foo_log))
         c = _read_file(foo_log)
         self.assertTrue('test_init.py:20] first' in c)
-                    
+
         # now multiline message
         logger.warn('second\nthird')
         logger.warn('last')
@@ -40,6 +40,17 @@ class TestInit(unittest.TestCase):
                 msecs = True
 
         self.assertTrue(msecs)
+
+        # test json formatter
+        # replace the default formatter
+        for handler in logger.handlers:
+            handler.formatter = adsmutils.get_json_formatter()
+        logger.info('test json formatter')
+        c = _read_file(foo_log)
+        self.assertTrue('"message": "test json formatter"' in c)
+        self.assertTrue('"hostname":' in c)
+        self.assertTrue('"lineno":' in c)
+
 
 if __name__ == '__main__':
     unittest.main()
