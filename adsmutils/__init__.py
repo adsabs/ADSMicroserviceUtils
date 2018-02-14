@@ -220,6 +220,9 @@ def setup_logging(name_, level=None, proj_home=None):
     logging_instance.addHandler(rfh)
     logging_instance.setLevel(level)
 
+    stdout = logging.StreamHandler(sys.stdout)
+    logging_instance.addHandler(stdout)
+
     return logging_instance
 
 
