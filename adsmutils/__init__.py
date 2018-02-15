@@ -171,7 +171,7 @@ def load_module(filename):
     return res
 
 
-def setup_logging(name_, level=None, proj_home=None):
+def setup_logging(name_, level=None, proj_home=None, attach_stdout=False):
     """
     Sets up generic logging to file with rotating files on disk
 
@@ -219,6 +219,11 @@ def setup_logging(name_, level=None, proj_home=None):
     logging_instance.handlers = []
     logging_instance.addHandler(rfh)
     logging_instance.setLevel(level)
+
+    if attach_stdout:
+        stdout = logging.StreamHandler(sys.stdout)
+        logging_instance = logging.getLogger()
+        logging_instance.addHandler(stdout)
 
     return logging_instance
 
@@ -366,10 +371,6 @@ class JsonFormatter(jsonlogger.JsonFormatter, object):
         self._extra = extra
         self.use_color = use_color
         jsonlogger.JsonFormatter.__init__(self, fmt=fmt, datefmt=datefmt, *args, **kwargs)
-
-        stdout = logging.StreamHandler(sys.stdout)
-        logging_instance = logging.getLogger()
-        logging_instance.addHandler(stdout)
 
     def process_log_record(self, log_record):
         # Enforce the presence of a timestamp
