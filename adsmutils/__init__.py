@@ -222,7 +222,6 @@ def setup_logging(name_, level=None, proj_home=None, attach_stdout=False):
 
     if attach_stdout:
         stdout = logging.StreamHandler(sys.stdout)
-        logging_instance = logging.getLogger()
         logging_instance.addHandler(stdout)
 
     return logging_instance
