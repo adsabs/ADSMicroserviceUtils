@@ -3,3 +3,10 @@
 
 # ADSPipelineUtils
 Set of common libraries used by ADS microservices.
+
+Class ADSFlask is to be used by all the microservice applications, where logging is setup automatically. 
+Note that if your microservice application requires logging to stdout in addition to the log file include
+
+    LOG_STDOUT = True
+
+in your microservice's config.py.

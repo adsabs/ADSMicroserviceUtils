@@ -16,7 +16,6 @@ setup(name='adsmutils',
           'setuptools>=36.5.0',
           'six>=1.11.0',
           'Flask-SQLAlchemy==2.2',
-          'celery==4.1.0',
           'python-json-logger==0.1.8'
       ],
   )
