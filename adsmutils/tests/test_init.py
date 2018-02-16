@@ -51,6 +51,12 @@ class TestInit(unittest.TestCase):
         self.assertTrue('"hostname":' in c)
         self.assertTrue('"lineno":' in c)
 
+        # verfiy that there was only one log handler, logging to a file
+        self.assertTrue(len(logger.handlers), 1)
+        # now create a logger, requesting logs be written to stdout as well, so there will be two log handlers
+        logger2 = adsmutils.setup_logging(name_='foo.bar.2', attach_stdout=True)
+        self.assertTrue(len(logger2.handlers), 2)
+
 
 if __name__ == '__main__':
     unittest.main()
