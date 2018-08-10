@@ -389,6 +389,7 @@ class JsonFormatter(jsonlogger.JsonFormatter, object):
             # Log key fields that gnunicorn logs too
             log_record["X-Original-Uri"] = flask.request.headers.get('X-Original-Uri', "-")
             log_record["X-Original-Forwarded-For"] = flask.request.headers.get('X-Original-Forwarded-For', "-")
+            log_record["X-Forwarded-For"] = flask.request.headers.get('X-Forwarded-For', "-")
             log_record["X-Forwarded-Authorization"] = flask.request.headers.get('X-Forwarded-Authorization', "-")
             log_record["Authorization"] = flask.request.headers.get('Authorization', "-")
             log_record["X-Amzn-Trace-Id"] = flask.request.headers.get('X-Amzn-Trace-Id', "-")
