@@ -11,6 +11,7 @@ import inspect
 from mock import patch
 
 import adsmutils
+from base import TestCaseDatabase
 
 class TestAdsUtils(unittest.TestCase):
     """
@@ -83,5 +84,34 @@ class TestAdsUtils(unittest.TestCase):
         self.assertEqual(d3.isoformat(), '2009-09-03T20:56:35.450686+00:00')
 
 
+from sqlalchemy.ext.declarative import declarative_base
+import sqlalchemy as sa
+
+class TestDBUtils(TestCaseDatabase):
+    def test_utcdatetime_type(self):
+        
+        base = declarative_base()
+        class Test(base):
+            __tablename__ = 'testdate'
+            id = sa.Column(sa.Integer, primary_key=True)
+            created = sa.Column(adsmutils.UTCDateTime, default=adsmutils.get_date)
+            updated = sa.Column(adsmutils.UTCDateTime)
+        base.metadata.bind = self.app.db.session.get_bind()
+        base.metadata.create_all()
+        
+        with self.app.session_scope() as session:
+            session.add(Test())
+            m = session.query(Test).first()
+            assert m.created
+            assert m.created.tzname() == 'UTC'
+            assert '+00:00' in str(m.created)
+            
+            current = adsmutils.get_date('2018-09-07T20:22:02.249389+00:00')
+            m.updated = current
+            session.commit()
+            
+            m = session.query(Test).first()
+            assert str(m.updated) == str(current)
+        
 if __name__ == '__main__':
     unittest.main()

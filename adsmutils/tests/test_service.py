@@ -2,6 +2,7 @@
 
 from base import TestCase, TestCaseDatabase
 import mock
+import unittest
 
 class TestServices(TestCase):
 
@@ -51,3 +52,7 @@ class TestServicesWithDatabase(TestCaseDatabase):
         r = self.client.get('/alive')
         self.assertEqual(r.status_code, 503)
         self.assertEqual(r.json['alive'], False)
+
+
+if __name__ == '__main__':
+    unittest.main()

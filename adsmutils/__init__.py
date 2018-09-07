@@ -6,7 +6,7 @@ project, and so do not belong to anything specific.
 
 from __future__ import absolute_import, unicode_literals
 from contextlib import contextmanager
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, types, TIMESTAMP
 from sqlalchemy.orm import load_only as _load_only
 from sqlalchemy.orm import scoped_session
 from sqlalchemy.orm import sessionmaker
@@ -322,6 +322,8 @@ class ADSFlask(Flask):
         """Closes the app"""
         self.db = None
         self.logger = None
+        if self.client:
+            self.client.close()
 
     @advertise(scopes=['execute-query'], rate_limit=[4000, 60*60])
     def ready(self, key='ready'):
@@ -498,3 +500,36 @@ def get_json_formatter(logfmt=u'%(asctime)s,%(msecs)03d %(levelname)-8s [%(proce
     return JsonFormatter(logfmt, datefmt, extra={"hostname": socket.gethostname()})
 
 
+
+class UTCDateTime(types.TypeDecorator):
+    """Value type for SQLAlachemy to be used for UTC datetime
+    example usage (in your models.py)
+    
+    from sqlalchemy.ext.declarative import declarative_base
+    from adsmutils import get_date, UTCDateTime
+    Base = declarative_base()
+    
+    class Foo(Base):
+        __tablename__ = 'foo'
+        id = Column(Integer, primary_key=True)
+        created = Column(UTCDateTime, default=get_date)
+        updated = Column(UTCDateTime)
+    
+    """
+    
+    impl = TIMESTAMP(timezone=True)
+    
+    def process_bind_param(self, value, engine):
+        if isinstance(value, basestring):
+            return get_date(value).astimezone(utc_zone)
+        elif value is not None:
+            if value.tzname() is None:
+                return value.replace(tzinfo=local_zone).astimezone(tz=utc_zone)
+            return value.astimezone(tz=utc_zone) # will raise Error if not datetime
+
+
+    def process_result_value(self, value, engine):
+        if value is not None:
+            if value.tzname() is None:
+                return value.replace(tzinfo=local_zone).astimezone(tz=utc_zone)
+            return value.astimezone(tz=utc_zone)
