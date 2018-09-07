@@ -531,5 +531,8 @@ class UTCDateTime(types.TypeDecorator):
     def process_result_value(self, value, engine):
         if value is not None:
             if value.tzname() is None:
+                # sqlite seems to save strings and then loads them without local timezone
+                if 'sqlite' in engine.name:
+                    return value.replace(tzinfo=utc_zone)
                 return value.replace(tzinfo=local_zone).astimezone(tz=utc_zone)
             return value.astimezone(tz=utc_zone)
