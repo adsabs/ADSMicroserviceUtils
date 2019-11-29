@@ -33,7 +33,8 @@ from pythonjsonlogger import jsonlogger
 local_zone = tz.tzlocal()
 utc_zone = tz.tzutc()
 
-TIMESTAMP_FMT = u'%Y-%m-%dT%H:%M:%S.%fZ'
+# Dateformat compatible with fluent-bit except that %f will result in more than 3 decimals
+TIMESTAMP_FMT = u'%Y-%m-%d %H:%M:%S.%f'
 
 
 def _get_proj_home(extra_frames=0):
@@ -191,7 +192,7 @@ def setup_logging(name_, level=None, proj_home=None, attach_stdout=False):
     level = getattr(logging, level)
 
     logfmt = u'%(asctime)s %(msecs)03d %(levelname)-8s [%(process)d:%(threadName)s:%(filename)s:%(lineno)d] %(message)s'
-    datefmt = u'%Y-%m-%dT%H:%M:%S.%fZ'  # ISO 8601
+    datefmt = TIMESTAMP_FMT
     # formatter = logging.Formatter(fmt=logfmt, datefmt=datefmt)
 
     formatter = MultilineMessagesFormatter(fmt=logfmt, datefmt=datefmt)
@@ -425,7 +426,9 @@ class JsonFormatter(jsonlogger.JsonFormatter, object):
         if u'asctime' in log_record:
             log_record[u'timestamp'] = log_record[u'asctime']
         else:
-            log_record[u'timestamp'] = datetime.utcnow().strftime(TIMESTAMP_FMT)
+            # fluent-bit compatible format: 2019-11-28 06:05:54.823
+            # instead of: 2019-11-28 06:05:54.82317781
+            log_record[u'timestamp'] = datetime.utcnow().strftime(TIMESTAMP_FMT)[:-3]
             log_record[u'asctime'] = log_record[u'timestamp']
 
         if self._extra is not None:
@@ -444,6 +447,8 @@ class JsonFormatter(jsonlogger.JsonFormatter, object):
         how to add microsecs. datetime understands that. so we
         have to work around the old time.strftime here."""
         if datefmt:
+            # fluent-bit compatible format: 2019-11-28 06:05:54.823
+            # instead of: 2019-11-28 06:05:54.82317781
             datefmt = datefmt.replace(u'%f', u'%03d' % (record.msecs))
             return Formatter.formatTime(self, record, datefmt)
         else:
