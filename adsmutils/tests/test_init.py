@@ -36,8 +36,8 @@ class TestInit(unittest.TestCase):
 
         msecs = False
         for x in c.strip().split(u'\n'):
-            datestr = " ".join(x.split(u' ')[:2])
-            if datestr not in (u'', u' '):
+            datestr = x.split(u' ')[0]
+            if datestr != u'':
                 t = adsmutils.get_date(datestr)
             if t.microsecond > 0:
                 msecs = True

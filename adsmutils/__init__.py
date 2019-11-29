@@ -34,7 +34,7 @@ local_zone = tz.tzlocal()
 utc_zone = tz.tzutc()
 
 # Dateformat compatible with fluent-bit except that %f will result in more than 3 decimals
-TIMESTAMP_FMT = u'%Y-%m-%d %H:%M:%S.%f'
+TIMESTAMP_FMT = u'%Y-%m-%dT%H:%M:%S.%fZ'
 
 
 def _get_proj_home(extra_frames=0):
@@ -428,7 +428,7 @@ class JsonFormatter(jsonlogger.JsonFormatter, object):
         else:
             # fluent-bit compatible format: 2019-11-28 06:05:54.823
             # instead of: 2019-11-28 06:05:54.82317781
-            log_record[u'timestamp'] = datetime.utcnow().strftime(TIMESTAMP_FMT)[:-3]
+            log_record[u'timestamp'] = datetime.utcnow().strftime(TIMESTAMP_FMT)[:-4] + "Z"
             log_record[u'asctime'] = log_record[u'timestamp']
 
         if self._extra is not None:
