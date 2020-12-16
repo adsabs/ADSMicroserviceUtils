@@ -6,7 +6,7 @@ Flask-RESTful==0.3.6
 flask-discoverer==0.1.4
 python-dateutil==2.6.0
 python-json-logger==0.1.9
-requests==2.19.1
+requests==2.20.0
 six>=1.11.0
 setuptools>=40.0.0
 SQLAlchemy==1.2.11
