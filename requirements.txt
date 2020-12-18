@@ -2,6 +2,7 @@ ConcurrentLogHandler==0.9.1
 DateTime==4.3.0
 Flask==0.12.4 ; python_version < '3.0'
 Flask==1.1.2 ; python_version > '3.0'
+Werkzeug==0.16.1 ; python_version < '3.0'
 Flask-SQLAlchemy==2.4.4
 Flask-RESTful==0.3.8
 flask-discoverer==0.1.5
