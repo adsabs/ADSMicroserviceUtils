@@ -19,7 +19,7 @@ class TestInit(unittest.TestCase):
         if os.path.exists(foo_log):
             os.remove(foo_log)
         logger = adsmutils.setup_logging(u'foo.bar')
-        logger.warn(u'first')
+        logger.warning(u'first')
         logger.handlers[0].stream.flush()
 
         self.assertTrue(os.path.exists(foo_log))
@@ -29,8 +29,8 @@ class TestInit(unittest.TestCase):
         self.assertTrue('first' in c)
 
         # now multiline message
-        logger.warn(u'second\nthird')
-        logger.warn(u'last')
+        logger.warning(u'second\nthird')
+        logger.warning(u'last')
         c = _read_file(foo_log)
         self.assertTrue(u'second\n     third' in c)
 

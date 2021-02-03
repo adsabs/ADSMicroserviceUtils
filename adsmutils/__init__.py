@@ -11,7 +11,7 @@ import inspect
 import json
 import logging
 from logging import Formatter
-import imp
+import importlib
 import os
 import socket
 import sys
@@ -161,7 +161,8 @@ def load_module(filename):
     """
 
     filename = os.path.join(filename)
-    d = imp.new_module('config')
+    module_spec = importlib.machinery.ModuleSpec('config', None)
+    d = importlib.util.module_from_spec(module_spec)
     d.__file__ = filename
     try:
         with open(filename) as config_file:
