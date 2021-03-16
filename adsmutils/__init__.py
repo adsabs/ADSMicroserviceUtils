@@ -5,6 +5,10 @@ project, and so do not belong to anything specific.
 """
 
 from __future__ import absolute_import, unicode_literals, division, print_function
+
+from gevent import monkey
+monkey.patch_all()
+
 import ast
 from contextlib import contextmanager
 import inspect
