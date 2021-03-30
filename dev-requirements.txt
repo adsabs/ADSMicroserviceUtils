@@ -1,6 +1,6 @@
 coverage==4.5.4
 coveralls==1.8.2
-Flask-Testing==0.8.0
+Flask-Testing==0.8.1
 httpretty==0.8.10
 mock==3.0.5
 psycopg2==2.7.5 ; python_version < '3.0'
