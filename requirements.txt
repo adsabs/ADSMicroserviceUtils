@@ -6,7 +6,7 @@ Werkzeug==0.16.1 ; python_version < '3.0'
 Flask-SQLAlchemy==2.4.4
 Flask-RESTful==0.3.8
 flask-discoverer==0.1.5
-python-dateutil==2.8.1
+python-dateutil==2.8.2
 python-json-logger==0.1.11 ; python_version < '3.0'
 python-json-logger==2.0.1 ; python_version > '3.0'
 requests>=2.25.1
