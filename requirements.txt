@@ -8,6 +8,7 @@ Flask-RESTful==0.3.8
 flask-discoverer@git+https://github.com/adsabs/flask-discoverer@f749f0825620ff4478af3fd1abb24edf1829a90e
 python-dateutil==2.8.2
 python-json-logger==0.1.11 ; python_version < '3.0'
+python-json-logger>=2.0.1 ; python_version > '3.0'
 requests>=2.25.1
 six>=1.15.0
 setuptools>=40.0.0,<58.0.0
