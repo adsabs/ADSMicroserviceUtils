@@ -60,7 +60,8 @@ class TestAdsUtils(unittest.TestCase):
             adsmutils.setup_logging(u'app')
             f = os.path.abspath(os.path.join(os.path.abspath(__file__), u'../../..'))
             tmp = str(cloghandler.call_args)
-            tmp = tmp.replace("=u'", "='")   # remove unicode annotations in python 2            # Order may vary between versions, check individual parameters
+            tmp = tmp.replace("=u'", "='")   # remove unicode annotations in python 2            
+            # Order may vary between versions, check individual parameters
             self.assertIn("filename='{filename}/logs/app.log'".format(filename=f), tmp)
             self.assertIn("maxBytes=10485760", tmp)
             self.assertIn("backupCount=10", tmp)
