@@ -20,7 +20,12 @@ class TestInit(unittest.TestCase):
             os.remove(foo_log)
         logger = adsmutils.setup_logging(u'foo.bar')
         logger.warning(u'first')
-        logger.handlers[0].stream.flush()
+        # If handler has stream attribute, flush it
+        if hasattr(logger.handlers[0], 'stream') and logger.handlers[0].stream:
+            logger.handlers[0].stream.flush()
+        else:
+            # concurrent-log-handler doesn't have stream attribute
+            logger.handlers[0].flush()
 
         self.assertTrue(os.path.exists(foo_log))
         c = _read_file(foo_log)

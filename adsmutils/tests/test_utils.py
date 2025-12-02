@@ -60,9 +60,12 @@ class TestAdsUtils(unittest.TestCase):
             adsmutils.setup_logging(u'app')
             f = os.path.abspath(os.path.join(os.path.abspath(__file__), u'../../..'))
             tmp = str(cloghandler.call_args)
-            tmp = tmp.replace("=u'", "='")   # remove unicode annotations in python 2
-            self.assertEqual("call(backupCount=10, encoding='UTF-8', filename='{filename}/logs/app.log', maxBytes=10485760, mode='a')".format(filename=f),
-                             tmp)
+            tmp = tmp.replace("=u'", "='")   # remove unicode annotations in python 2            # Order may vary between versions, check individual parameters
+            self.assertIn("filename='{filename}/logs/app.log'".format(filename=f), tmp)
+            self.assertIn("maxBytes=10485760", tmp)
+            self.assertIn("backupCount=10", tmp)
+            self.assertIn("mode='a'", tmp)
+            self.assertIn("encoding='UTF-8'", tmp)
 
 
     def test_get_date(self):
@@ -94,7 +97,12 @@ class TestDBUtils(TestCaseDatabase):
             id = sa.Column(sa.Integer, primary_key=True)
             created = sa.Column(adsmutils.UTCDateTime, default=adsmutils.get_date)
             updated = sa.Column(adsmutils.UTCDateTime)
-        base.metadata.bind = self.app.db.session.get_bind()
+        # Handle SQLAlchemy version differences
+        try:
+            base.metadata.bind = self.app.db.session.get_bind()
+        except TypeError:
+            # SQLAlchemy 1.4+ changed the get_bind() signature
+            base.metadata.bind = self.app.db.session.bind
         base.metadata.create_all()
         
         with self.app.session_scope() as session:

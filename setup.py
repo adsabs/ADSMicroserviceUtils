@@ -28,7 +28,14 @@ def get_git_version(default="v0.0.1"):
 setup(
     author="NASA/SAO ADS",
     name='adsmutils',
-    classifiers=['Programming Language :: Python :: 2.7'],
+    classifiers=[
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+    ],
     description='ADS Microservice Utils',
     include_package_data=True,
     install_requires=required,
