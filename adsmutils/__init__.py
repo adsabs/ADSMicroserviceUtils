@@ -4,7 +4,6 @@ for this module. But are also used in differing modules insidide the same
 project, and so do not belong to anything specific.
 """
 
-from __future__ import absolute_import, unicode_literals, division, print_function
 import ast
 from contextlib import contextmanager
 import inspect
@@ -16,7 +15,6 @@ import os
 import socket
 import sys
 import time
-import six
 from datetime import datetime
 from dateutil import parser, tz
 
@@ -26,7 +24,7 @@ from flask import Response
 from flask_sqlalchemy import SQLAlchemy
 from flask_discoverer import advertise
 import requests
-from sqlalchemy import types, TIMESTAMP
+from sqlalchemy import types, TIMESTAMP, text
 from concurrent_log_handler import ConcurrentRotatingFileHandler
 from pythonjsonlogger import jsonlogger
 
@@ -39,22 +37,23 @@ TIMESTAMP_FMT = u'%Y-%m-%dT%H:%M:%S.%fZ'
 
 def _get_proj_home(extra_frames=0):
     """Get the location of the caller module; then go up max_levels until
-    finding requirements.txt"""
+    finding requirements.txt or pyproject.toml"""
 
     frame = inspect.stack()[2+extra_frames]
     module = inspect.getsourcefile(frame[0])
     if not module:
-        raise Exception(u'Sorry, wasnt able to guess your location. Let devs know about this issue.')
+        raise Exception('Sorry, wasnt able to guess your location. Let devs know about this issue.')
     d = os.path.dirname(module)
     x = d
     max_level = 3
     while max_level:
-        f = os.path.abspath(os.path.join(x, u'requirements.txt'))
-        if os.path.exists(f):
-            return x
-        x = os.path.abspath(os.path.join(x, u'..'))
+        for marker in ('pyproject.toml', 'requirements.txt'):
+            f = os.path.abspath(os.path.join(x, marker))
+            if os.path.exists(f):
+                return x
+        x = os.path.abspath(os.path.join(x, '..'))
         max_level -= 1
-    sys.stderr.write(u'Sorry, cant find the proj home; returning the location of the caller: %s\n' % d)
+    sys.stderr.write('Sorry, cant find the proj home; returning the location of the caller: %s\n' % d)
     return d
 
 
@@ -69,7 +68,7 @@ def get_date(timestr=None):
     :return: datetime object with tzinfo=tzutc()
     """
     if timestr is None:
-        return datetime.utcnow().replace(tzinfo=utc_zone)
+        return datetime.now(tz=utc_zone)
 
     if isinstance(timestr, datetime):
         date = timestr
@@ -339,7 +338,7 @@ class ADSFlask(Flask):
         else:
             with self.session_scope() as session:
                 try:
-                    session.execute('SELECT 1')
+                    session.execute(text('SELECT 1'))
                     return False
                 except:
                     return True
@@ -419,7 +418,7 @@ class JsonFormatter(jsonlogger.JsonFormatter, object):
             log_record[u'X-Forwarded-Authorization'] = flask.request.headers.get(u'X-Forwarded-Authorization', u'-')
             log_record[u'Authorization'] = flask.request.headers.get(u'Authorization', u'-')
             log_record[u'X-Amzn-Trace-Id'] = flask.request.headers.get(u'X-Amzn-Trace-Id', u'-')
-            log_record[u'cookie'] = u'; '.join([u'{}={}'.format(k, v) for k, v in six.iteritems(flask.request.cookies)])
+            log_record[u'cookie'] = u'; '.join([u'{}={}'.format(k, v) for k, v in flask.request.cookies.items()])
 
     def process_log_record(self, log_record):
         # Enforce the presence of a timestamp
@@ -428,7 +427,7 @@ class JsonFormatter(jsonlogger.JsonFormatter, object):
         else:
             # fluent-bit compatible format: 2019-11-28 06:05:54.823
             # instead of: 2019-11-28 06:05:54.82317781
-            log_record[u'timestamp'] = datetime.utcnow().strftime(TIMESTAMP_FMT)[:-4] + "Z"
+            log_record[u'timestamp'] = datetime.now(tz=utc_zone).strftime(TIMESTAMP_FMT)[:-4] + "Z"
             log_record[u'asctime'] = log_record[u'timestamp']
 
         if self._extra is not None:
@@ -484,7 +483,7 @@ class GunicornJsonFormatter(JsonFormatter, object):
             pass
         else:
             leftovers = {}
-            for key, value in six.iteritems(msg):
+            for key, value in msg.items():
                 # Make sure we do not overwrite an existing key
                 # and we do not use "message" since it will be overwritten
                 if key != u'message' and key not in log_record:
@@ -510,7 +509,7 @@ class UTCDateTime(types.TypeDecorator):
     """Value type for SQLAlachemy to be used for UTC datetime
     example usage (in your models.py)
 
-    from sqlalchemy.ext.declarative import declarative_base
+    from sqlalchemy.orm import declarative_base
     from adsmutils import get_date, UTCDateTime
     Base = declarative_base()
 

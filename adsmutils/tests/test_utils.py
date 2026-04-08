@@ -7,7 +7,7 @@ import unittest
 import inspect
 from mock import patch
 
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 import sqlalchemy as sa
 
 import adsmutils
