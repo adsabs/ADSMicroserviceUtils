@@ -26,7 +26,7 @@ from flask_discoverer import advertise
 import requests
 from sqlalchemy import types, TIMESTAMP, text
 from concurrent_log_handler import ConcurrentRotatingFileHandler
-from pythonjsonlogger import jsonlogger
+from pythonjsonlogger import json as jsonlogger
 
 local_zone = tz.tzlocal()
 utc_zone = tz.tzutc()
