@@ -2,13 +2,80 @@
 
 from __future__ import absolute_import, unicode_literals, division, print_function
 import os
+import tempfile
 import unittest
+from unittest import mock
 import adsmutils
 
 
 def _read_file(fpath):
     with open(fpath, 'r') as fi:
         return fi.read()
+
+
+def _touch(path):
+    with open(path, 'w'):
+        pass
+
+
+def _run_get_proj_home_as(caller_path):
+    """Invoke _get_proj_home as if it were called from `caller_path`."""
+    with mock.patch('adsmutils.inspect.getsourcefile', return_value=caller_path):
+        return adsmutils._get_proj_home()
+
+
+class TestGetProjHome(unittest.TestCase):
+
+    def test_config_py_in_caller_dir_wins(self):
+        """Biblib layout: pyproject.toml at repo root, config.py inside the
+        package where the caller lives. PROJ_HOME resolves to the package
+        directory so biblib/config.py loads. Regression test for the case
+        that made the shim necessary."""
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = os.path.join(tmp, 'repo')
+            pkg = os.path.join(repo, 'pkg')
+            os.makedirs(pkg)
+            _touch(os.path.join(repo, 'pyproject.toml'))
+            _touch(os.path.join(pkg, 'config.py'))
+            caller_py = os.path.join(pkg, 'app.py')
+            _touch(caller_py)
+
+            proj_home = _run_get_proj_home_as(caller_py)
+            self.assertEqual(os.path.realpath(proj_home),
+                             os.path.realpath(pkg))
+
+    def test_config_py_at_repo_root(self):
+        """Classic ADS layout: config.py at the repo root, caller inside the
+        package. PROJ_HOME resolves to the repo root."""
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = os.path.join(tmp, 'repo')
+            pkg = os.path.join(repo, 'pkg')
+            os.makedirs(pkg)
+            _touch(os.path.join(repo, 'pyproject.toml'))
+            _touch(os.path.join(repo, 'config.py'))
+            caller_py = os.path.join(pkg, 'app.py')
+            _touch(caller_py)
+
+            proj_home = _run_get_proj_home_as(caller_py)
+            self.assertEqual(os.path.realpath(proj_home),
+                             os.path.realpath(repo))
+
+    def test_no_config_py_anywhere_falls_back_to_marker_dir(self):
+        """No config.py anywhere: preserve the pre-existing behavior by
+        returning the first directory that has a marker file. Keeps
+        setup_logging's logs/ dir in the historically expected place for
+        projects (like adsmutils itself) that don't ship a config.py."""
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = os.path.join(tmp, 'repo')
+            pkg = os.path.join(repo, 'pkg')
+            os.makedirs(pkg)
+            _touch(os.path.join(repo, 'pyproject.toml'))
+            caller_py = os.path.join(pkg, 'app.py')
+            _touch(caller_py)
+
+            proj_home = _run_get_proj_home_as(caller_py)
+            self.assertEqual(os.path.realpath(proj_home),
+                             os.path.realpath(repo))
 
 
 class TestInit(unittest.TestCase):

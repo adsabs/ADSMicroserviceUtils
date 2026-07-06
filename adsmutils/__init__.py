@@ -36,8 +36,11 @@ TIMESTAMP_FMT = u'%Y-%m-%dT%H:%M:%S.%fZ'
 
 
 def _get_proj_home(extra_frames=0):
-    """Get the location of the caller module; then go up max_levels until
-    finding requirements.txt or pyproject.toml"""
+    """Get the location of the caller module; then go up max_levels looking
+    for a directory that contains config.py. If none is found, fall back to
+    the first directory that contains a marker (pyproject.toml or
+    requirements.txt), preserving pre-existing behavior for projects that
+    don't define a config.py at all."""
 
     frame = inspect.stack()[2+extra_frames]
     module = inspect.getsourcefile(frame[0])
@@ -46,13 +49,19 @@ def _get_proj_home(extra_frames=0):
     d = os.path.dirname(module)
     x = d
     max_level = 3
+    marker_only_fallback = None
     while max_level:
-        for marker in ('pyproject.toml', 'requirements.txt'):
-            f = os.path.abspath(os.path.join(x, marker))
-            if os.path.exists(f):
-                return x
+        if os.path.exists(os.path.join(x, 'config.py')):
+            return x
+        if marker_only_fallback is None:
+            for marker in ('pyproject.toml', 'requirements.txt'):
+                if os.path.exists(os.path.join(x, marker)):
+                    marker_only_fallback = x
+                    break
         x = os.path.abspath(os.path.join(x, '..'))
         max_level -= 1
+    if marker_only_fallback is not None:
+        return marker_only_fallback
     sys.stderr.write('Sorry, cant find the proj home; returning the location of the caller: %s\n' % d)
     return d
 
