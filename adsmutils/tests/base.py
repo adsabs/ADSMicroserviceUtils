@@ -9,27 +9,27 @@ from adsmutils import ADSFlask
 class TestCaseDatabase(TestCase):
 
     postgresql_url_dict = {
-        u'port': 1234,
-        u'host': u'127.0.0.1',
-        u'user': u'postgres',
-        u'database': u'test'
+        'port': 1234,
+        'host': '127.0.0.1',
+        'user': 'postgres',
+        'database': 'test'
     }
-    postgresql_url = u'postgresql://{user}@{host}:{port}/{database}' \
+    postgresql_url = 'postgresql://{user}@{host}:{port}/{database}' \
         .format(
-            user=postgresql_url_dict[u'user'],
-            host=postgresql_url_dict[u'host'],
-            port=postgresql_url_dict[u'port'],
-            database=postgresql_url_dict[u'database']
+            user=postgresql_url_dict['user'],
+            host=postgresql_url_dict['host'],
+            port=postgresql_url_dict['port'],
+            database=postgresql_url_dict['database']
         )
 
     def create_app(self):
         '''Start the wsgi application'''
         local_config = {
-            u'SQLALCHEMY_DATABASE_URI': self.postgresql_url,
-            u'SQLALCHEMY_ECHO': False,
-            u'TESTING': True,
-            u'PROPAGATE_EXCEPTIONS': True,
-            u'TRAP_BAD_REQUEST_ERRORS': True
+            'SQLALCHEMY_DATABASE_URI': self.postgresql_url,
+            'SQLALCHEMY_ECHO': False,
+            'TESTING': True,
+            'PROPAGATE_EXCEPTIONS': True,
+            'TRAP_BAD_REQUEST_ERRORS': True
         }
         app = ADSFlask(__name__, static_folder=None, local_config=local_config)
         return app

@@ -32,7 +32,7 @@ local_zone = tz.tzlocal()
 utc_zone = tz.tzutc()
 
 # Dateformat compatible with fluent-bit except that %f will result in more than 3 decimals
-TIMESTAMP_FMT = u'%Y-%m-%dT%H:%M:%S.%fZ'
+TIMESTAMP_FMT = '%Y-%m-%dT%H:%M:%S.%fZ'
 
 
 def _get_proj_home(extra_frames=0):
@@ -75,7 +75,7 @@ def get_date(timestr=None):
     else:
         date = parser.parse(timestr)
 
-    if u'tzinfo' in repr(date):  # hack, around silly None.encode()...
+    if 'tzinfo' in repr(date):  # hack, around silly None.encode()...
         date = date.astimezone(utc_zone)
     else:
         # this depends on current locale, for the moment when not
@@ -111,7 +111,7 @@ def load_config(proj_home=None, extra_frames=0, app_name=None):
     if proj_home is not None:
         proj_home = os.path.abspath(proj_home)
         if not os.path.exists(proj_home):
-            raise Exception(u'{proj_home} doesnt exist'.format(proj_home=proj_home))
+            raise Exception('{proj_home} doesnt exist'.format(proj_home=proj_home))
     else:
         proj_home = _get_proj_home(extra_frames=extra_frames)
 
@@ -120,15 +120,15 @@ def load_config(proj_home=None, extra_frames=0, app_name=None):
 
     conf['PROJ_HOME'] = proj_home
 
-    conf.update(load_module(os.path.join(proj_home, u'config.py')))
-    conf.update(load_module(os.path.join(proj_home, u'local_config.py')))
-    conf_update_from_env(app_name or conf.get(u'SERVICE', ''), conf)
+    conf.update(load_module(os.path.join(proj_home, 'config.py')))
+    conf.update(load_module(os.path.join(proj_home, 'local_config.py')))
+    conf_update_from_env(app_name or conf.get('SERVICE', ''), conf)
 
     return conf
 
 
 def conf_update_from_env(app_name, conf):
-    app_name = app_name.replace(u'.', u'_').upper()
+    app_name = app_name.replace('.', '_').upper()
     for key in conf.keys():
         specific_app_key = '_'.join((app_name, key))
         if specific_app_key in os.environ:
@@ -139,7 +139,7 @@ def conf_update_from_env(app_name, conf):
 
 
 def _replace_value(conf, key, new_value):
-    logging.info(u"Overwriting constant '%s' old value '%s' with new value '%s' from environment", key, conf[key], new_value)
+    logging.info("Overwriting constant '%s' old value '%s' with new value '%s' from environment", key, conf[key], new_value)
     try:
         w = json.loads(new_value)
         conf[key] = w
@@ -191,13 +191,13 @@ def setup_logging(name_, level=None, proj_home=None, attach_stdout=False):
 
     level = getattr(logging, level)
 
-    logfmt = u'%(asctime)s %(msecs)03d %(levelname)-8s [%(process)d:%(threadName)s:%(filename)s:%(lineno)d] %(message)s'
+    logfmt = '%(asctime)s %(msecs)03d %(levelname)-8s [%(process)d:%(threadName)s:%(filename)s:%(lineno)d] %(message)s'
     datefmt = TIMESTAMP_FMT
     # formatter = logging.Formatter(fmt=logfmt, datefmt=datefmt)
 
     formatter = MultilineMessagesFormatter(fmt=logfmt, datefmt=datefmt)
-    formatter.multiline_marker = u''
-    formatter.multiline_fmt = u'     %(message)s'
+    formatter.multiline_marker = ''
+    formatter.multiline_fmt = '     %(message)s'
 
     formatter.converter = time.gmtime
     logging_instance = logging.getLogger(name_)
@@ -205,19 +205,19 @@ def setup_logging(name_, level=None, proj_home=None, attach_stdout=False):
 
     if proj_home:
         proj_home = os.path.abspath(proj_home)
-        fn_path = os.path.join(proj_home, u'logs')
+        fn_path = os.path.join(proj_home, 'logs')
     else:
-        fn_path = os.path.join(_get_proj_home(), u'logs')
+        fn_path = os.path.join(_get_proj_home(), 'logs')
 
     if not os.path.exists(fn_path):
         os.makedirs(fn_path)
 
-    fn = os.path.join(fn_path, u'{0}.log'.format(name_.split(u'.log')[0]))
+    fn = os.path.join(fn_path, '{0}.log'.format(name_.split('.log')[0]))
     rfh = ConcurrentRotatingFileHandler(filename=fn,
                                         maxBytes=10485760,
                                         backupCount=10,
-                                        mode=u'a',
-                                        encoding=u'UTF-8')  # 10MB file
+                                        mode='a',
+                                        encoding='UTF-8')  # 10MB file
     rfh.setFormatter(formatter)
     logging_instance.handlers = []
     logging_instance.addHandler(rfh)
@@ -257,27 +257,27 @@ class ADSFlask(Flask):
             over the default config (that is loaded from config.py and local_config.py)
         """
         proj_home = None
-        if u'proj_home' in kwargs:
-            proj_home = kwargs.pop(u'proj_home')
+        if 'proj_home' in kwargs:
+            proj_home = kwargs.pop('proj_home')
         self._config = load_config(extra_frames=1, proj_home=proj_home, app_name=app_name)
         if not proj_home:
-            proj_home = self._config.get(u'PROJ_HOME', None)
+            proj_home = self._config.get('PROJ_HOME', None)
 
         local_config = None
         if 'local_config' in kwargs:
-            local_config = kwargs.pop(u'local_config')
+            local_config = kwargs.pop('local_config')
             if local_config:
                 self._config.update(local_config)  # our config
 
         Flask.__init__(self, app_name, *args, **kwargs)
         self.config.update(self._config)
         self._logger = setup_logging(app_name, proj_home=proj_home,
-                                     level=self._config.get(u'LOGGING_LEVEL', u'INFO'),
-                                     attach_stdout=self._config.get(u'LOG_STDOUT', False))
+                                     level=self._config.get('LOGGING_LEVEL', 'INFO'),
+                                     attach_stdout=self._config.get('LOG_STDOUT', False))
 
         self.db = None
 
-        if self._config.get(u'SQLALCHEMY_DATABASE_URI', None):
+        if self._config.get('SQLALCHEMY_DATABASE_URI', None):
             self.db = SQLAlchemy(self)
 
         # HTTP connection pool
@@ -287,27 +287,27 @@ class ADSFlask(Flask):
         #   requests does not retry failed connections.
         # http://docs.python-requests.org/en/latest/api/?highlight=max_retries#requests.adapters.HTTPAdapter
         self.client = requests.Session()
-        http_adapter = requests.adapters.HTTPAdapter(pool_connections=self._config.get(u'REQUESTS_POOL_CONNECTIONS', 10), pool_maxsize=self._config.get(u'REQUESTS_POOL_MAXSIZE', 1000), max_retries=self._config.get(u'REQUESTS_POOL_RETRIES', 3), pool_block=False)
-        self.client.mount(u'http://', http_adapter)
+        http_adapter = requests.adapters.HTTPAdapter(pool_connections=self._config.get('REQUESTS_POOL_CONNECTIONS', 10), pool_maxsize=self._config.get('REQUESTS_POOL_MAXSIZE', 1000), max_retries=self._config.get('REQUESTS_POOL_RETRIES', 3), pool_block=False)
+        self.client.mount('http://', http_adapter)
         self.before_request_funcs.setdefault(None, []).append(self._before_request)
 
-        self.add_url_rule(u'/ready', u'ready', self.ready)
-        self.add_url_rule(u'/alive', u'alive', self.alive)
+        self.add_url_rule('/ready', 'ready', self.ready)
+        self.add_url_rule('/alive', 'alive', self.alive)
 
     def _before_request(self):
         if flask.has_request_context():
             # New request will contain also key information from the original request
             forward_headers = {}
-            forward_headers[u'X-Original-Uri'] = flask.request.headers.get(u'X-Original-Uri', u'-')
-            forward_headers[u'X-Original-Forwarded-For'] = flask.request.headers.get(u'X-Original-Forwarded-For', u'-')
-            forward_headers[u'X-Forwarded-For'] = flask.request.headers.get(u'X-Forwarded-For', u'-')
-            forward_headers[u'X-Amzn-Trace-Id'] = flask.request.headers.get(u'X-Amzn-Trace-Id', '-')
+            forward_headers['X-Original-Uri'] = flask.request.headers.get('X-Original-Uri', '-')
+            forward_headers['X-Original-Forwarded-For'] = flask.request.headers.get('X-Original-Forwarded-For', '-')
+            forward_headers['X-Forwarded-For'] = flask.request.headers.get('X-Forwarded-For', '-')
+            forward_headers['X-Amzn-Trace-Id'] = flask.request.headers.get('X-Amzn-Trace-Id', '-')
             self.client.headers.update(forward_headers)
 
     def _get_callers_module(self):
         frame = inspect.stack()[2]
         m = inspect.getmodule(frame[0])
-        if m.__name__ == u'__main__':
+        if m.__name__ == '__main__':
             parts = m.__file__.split(os.path.sep)
             return '%s.%s' % (parts[-2], parts[-1].split('.')[0])
         return m.__name__
@@ -323,14 +323,14 @@ class ADSFlask(Flask):
     def ready(self, key='ready'):
         """Endpoint /ready to signal that the application is ready to receive requests"""
         if self._db_failure():
-            return Response(json.dumps({key: False}), mimetype=u'application/json', status=503)
+            return Response(json.dumps({key: False}), mimetype='application/json', status=503)
         else:
-            return Response(json.dumps({key: True}), mimetype=u'application/json', status=200)
+            return Response(json.dumps({key: True}), mimetype='application/json', status=200)
 
-    @advertise(scopes=[u'execute-query'], rate_limit=[4000, 60*60])
+    @advertise(scopes=['execute-query'], rate_limit=[4000, 60*60])
     def alive(self):
         """Endpoint /alive to signal that the application is healthy"""
-        return self.ready(key=u'alive')
+        return self.ready(key='alive')
 
     def _db_failure(self):
         if self.db is None:
@@ -356,7 +356,7 @@ class ADSFlask(Flask):
         """
 
         if self.db is None:
-            raise Exception(u'DB not initialized properly, check: SQLALCHEMY_URL')
+            raise Exception('DB not initialized properly, check: SQLALCHEMY_URL')
 
         # create local session (optional step)
         s = self.db.session()
@@ -380,8 +380,8 @@ class MultilineMessagesFormatter(logging.Formatter):
         """
         s = logging.Formatter.format(self, record)
 
-        if u'\n' in s:
-            return u'\n     '.join(s.split(u'\n'))
+        if '\n' in s:
+            return '\n     '.join(s.split('\n'))
         else:
             return s
 
@@ -390,7 +390,7 @@ class MultilineMessagesFormatter(logging.Formatter):
         how to add microsecs. datetime understands that. so we
         have to work around the old time.strftime here."""
         if datefmt:
-            datefmt = datefmt.replace(u'%f', u'%03d' % (record.msecs))
+            datefmt = datefmt.replace('%f', '%03d' % (record.msecs))
             return logging.Formatter.formatTime(self, record, datefmt)
         else:
             return logging.Formatter.formatTime(self, record, datefmt)  # default ISO8601
@@ -402,7 +402,7 @@ class JsonFormatter(jsonlogger.JsonFormatter, object):
     converter = time.gmtime
 
     def __init__(self,
-                 fmt=u'%(asctime) %(name) %(processName) %(filename)  %(funcName) %(levelname) %(lineno) %(module) %(threadName) %(message)',
+                 fmt='%(asctime) %(name) %(processName) %(filename)  %(funcName) %(levelname) %(lineno) %(module) %(threadName) %(message)',
                  datefmt=TIMESTAMP_FMT,
                  extra={}, *args, **kwargs):
         self._extra = extra
@@ -412,23 +412,23 @@ class JsonFormatter(jsonlogger.JsonFormatter, object):
         super(JsonFormatter, self).add_fields(log_record, record, message_dict)
         if flask.has_request_context():
             # Log key fields that gnunicorn logs too
-            log_record[u'X-Original-Uri'] = flask.request.headers.get(u'X-Original-Uri', u'-')
-            log_record[u'X-Original-Forwarded-For'] = flask.request.headers.get(u'X-Original-Forwarded-For', u'-')
-            log_record[u'X-Forwarded-For'] = flask.request.headers.get(u'X-Forwarded-For', u'-')
-            log_record[u'X-Forwarded-Authorization'] = flask.request.headers.get(u'X-Forwarded-Authorization', u'-')
-            log_record[u'Authorization'] = flask.request.headers.get(u'Authorization', u'-')
-            log_record[u'X-Amzn-Trace-Id'] = flask.request.headers.get(u'X-Amzn-Trace-Id', u'-')
-            log_record[u'cookie'] = u'; '.join([u'{}={}'.format(k, v) for k, v in flask.request.cookies.items()])
+            log_record['X-Original-Uri'] = flask.request.headers.get('X-Original-Uri', '-')
+            log_record['X-Original-Forwarded-For'] = flask.request.headers.get('X-Original-Forwarded-For', '-')
+            log_record['X-Forwarded-For'] = flask.request.headers.get('X-Forwarded-For', '-')
+            log_record['X-Forwarded-Authorization'] = flask.request.headers.get('X-Forwarded-Authorization', '-')
+            log_record['Authorization'] = flask.request.headers.get('Authorization', '-')
+            log_record['X-Amzn-Trace-Id'] = flask.request.headers.get('X-Amzn-Trace-Id', '-')
+            log_record['cookie'] = '; '.join(['{}={}'.format(k, v) for k, v in flask.request.cookies.items()])
 
     def process_log_record(self, log_record):
         # Enforce the presence of a timestamp
-        if u'asctime' in log_record:
-            log_record[u'timestamp'] = log_record[u'asctime']
+        if 'asctime' in log_record:
+            log_record['timestamp'] = log_record['asctime']
         else:
             # fluent-bit compatible format: 2019-11-28 06:05:54.823
             # instead of: 2019-11-28 06:05:54.82317781
-            log_record[u'timestamp'] = datetime.now(tz=utc_zone).strftime(TIMESTAMP_FMT)[:-4] + "Z"
-            log_record[u'asctime'] = log_record[u'timestamp']
+            log_record['timestamp'] = datetime.now(tz=utc_zone).strftime(TIMESTAMP_FMT)[:-4] + "Z"
+            log_record['asctime'] = log_record['timestamp']
 
         if self._extra is not None:
             for key, value in self._extra.items():
@@ -448,7 +448,7 @@ class JsonFormatter(jsonlogger.JsonFormatter, object):
         if datefmt:
             # fluent-bit compatible format: 2019-11-28 06:05:54.823
             # instead of: 2019-11-28 06:05:54.82317781
-            datefmt = datefmt.replace(u'%f', u'%03d' % (record.msecs))
+            datefmt = datefmt.replace('%f', '%03d' % (record.msecs))
             return Formatter.formatTime(self, record, datefmt)
         else:
             return Formatter.formatTime(self, record, datefmt)  # default ISO8601
@@ -460,7 +460,7 @@ class JsonFormatter(jsonlogger.JsonFormatter, object):
 class GunicornJsonFormatter(JsonFormatter, object):
 
     def __init__(self, *args, **kwargs):
-        internal_kwargs = {u'extra': {u'hostname': socket.gethostname()}}
+        internal_kwargs = {'extra': {'hostname': socket.gethostname()}}
         internal_kwargs.update(kwargs)
         if len(args) >= 2:
             internal_kwargs['fmt'] = args[0]
@@ -473,9 +473,9 @@ class GunicornJsonFormatter(JsonFormatter, object):
     def add_fields(self, log_record, record, message_dict):
         super(GunicornJsonFormatter, self).add_fields(log_record, record, message_dict)
         # Log key fields that the flask microservice logs too
-        log_record[u'level'] = record.levelname
-        log_record[u'logger'] = record.name
-        log_record[u'msecs'] = record.msecs
+        log_record['level'] = record.levelname
+        log_record['logger'] = record.name
+        log_record['msecs'] = record.msecs
         # Extract JSON message
         try:
             msg = json.loads(record.message)
@@ -486,21 +486,21 @@ class GunicornJsonFormatter(JsonFormatter, object):
             for key, value in msg.items():
                 # Make sure we do not overwrite an existing key
                 # and we do not use "message" since it will be overwritten
-                if key != u'message' and key not in log_record:
+                if key != 'message' and key not in log_record:
                     log_record[key] = value
                 else:
                     leftovers[key] = value
-            log_record[u'_leftovers'] = json.dumps(leftovers)
+            log_record['_leftovers'] = json.dumps(leftovers)
 
     def process_log_record(self, log_record):
-        if u'_leftovers' in log_record:
+        if '_leftovers' in log_record:
             # Remove already extracted JSON message keys and leave only
             # the keys that could not be extracted (if any)
-            log_record[u'message'] = log_record[u'_leftovers']
+            log_record['message'] = log_record['_leftovers']
             del log_record['_leftovers']
         return super(GunicornJsonFormatter, self).process_log_record(log_record)
 
-def get_json_formatter(logfmt=u'%(asctime)s,%(msecs)03d %(levelname)-8s [%(process)d:%(threadName)s:%(filename)s:%(lineno)d] %(message)s',
+def get_json_formatter(logfmt='%(asctime)s,%(msecs)03d %(levelname)-8s [%(process)d:%(threadName)s:%(filename)s:%(lineno)d] %(message)s',
                        datefmt=TIMESTAMP_FMT):
     return JsonFormatter(logfmt, datefmt, extra={"hostname": socket.gethostname()})
 
@@ -525,8 +525,7 @@ class UTCDateTime(types.TypeDecorator):
 
     def process_bind_param(self, value, engine):
         # this function is called by sqlalchemy it passes engine which we ignored
-        # python2/3 compatible str and unicode check
-        if isinstance(value, (type('foo'), type(u'foo'))):
+        if isinstance(value, str):
             return get_date(value).astimezone(utc_zone)
         elif value is not None:
             if value.tzname() is None:
